@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Оптимальный маршрут с минимальным временем</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --main-bg: #191c23;
+            --surface: #232633;
+            --surface-glass: rgba(35, 38, 51, 0.80);
+            --primary: #7e4ff8;
+            --accent: #fc415a;
+            --border: #2f3242;
+            --text: #f4f4f9;
+            --text-muted: #b6b8c6;
+            --card-shadow: 0 8px 32px 0 rgba(0,0,0,0.20);
+            --blur: 10px;
+        }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: var(--main-bg);
+            color: var(--text);
+            font-family: 'Roboto', sans-serif;
+            min-height: 100vh;
+        }
+        .background {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #262846 0%, #191c23 100%);
+            animation: gradientShift 18s ease-in-out infinite;
+            padding: 24px;
+            box-sizing: border-box;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 60% }
+            50% { background-position: 100% 40% }
+            100% { background-position: 0% 60% }
+        }
+        .cube {
+            display: none;
+        }
+        .content {
+            max-width: 950px;
+            margin: 0px auto 0 auto;
+            background: var(--surface-glass);
+            border-radius: 22px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border);
+            padding: 36px 28px 30px 28px;
+            backdrop-filter: blur(var(--blur));
+        }
+        h1 {
+            text-align: center;
+            font-weight: 600;
+            font-size: 2.2rem;
+            color: var(--primary);
+            margin-bottom: 34px;
+            letter-spacing: 1.5px;
+        }
+        label {
+            color: var(--text);
+            font-weight: 500;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+        .input-group {
+            margin-bottom: 28px;
+        }
+        .address-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        #startAddress, #addresses {
+            width: 100%;
+            padding: 13px 14px;
+            background: var(--surface);
+            color: var(--text);
+            border: 1.5px solid var(--border);
+            border-radius: 7px;
+            font-family: 'Roboto', sans-serif;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border 0.3s, background 0.3s;
+        }
+        #startAddress:focus, #addresses:focus {
+            border-color: var(--primary);
+            background: #25273a;
+            outline: none;
+        }
+        #addresses {
+            min-height: 110px;
+            max-height: 250px;
+            resize: vertical;
+        }
+        button {
+            padding: 12px 30px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.07rem;
+            font-weight: 500;
+            transition: background 0.23s, transform 0.14s, box-shadow 0.22s;
+            margin-right: 8px;
+            letter-spacing: 0.3px;
+            box-shadow: 0 2px 18px 0 rgba(126, 79, 248, 0.07);
+        }
+        button:hover {
+            background: #6336cb;
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 22px 0 rgba(126, 79, 248, 0.16);
+        }
+        .location-btn {
+            background: var(--accent);
+        }
+        .location-btn:hover {
+            background: #b93147;
+        }
+        .print-btn {
+            background: #4CAF50;
+            margin-top: 15px;
+        }
+        .print-btn:hover {
+            background: #3e8e41;
+        }
+        #map {
+            width: 100%;
+            height: 430px;
+            margin-top: 30px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: #161821;
+            box-shadow: 0 3px 14px rgba(44,39,75,0.08);
+        }
+        .route-info {
+            margin-top: 24px;
+            padding: 18px;
+            border-radius: 6px;
+            border-left: 4px solid var(--primary);
+            background: rgba(44,47,71, 0.75);
+            color: var(--text);
+            font-size: 1.05rem;
+            margin-bottom: 10px;
+        }
+        #loading {
+            display: none;
+            margin-top: 16px;
+            color: var(--primary);
+            font-weight: 500;
+            text-align: center;
+            letter-spacing: 0.2px;
+        }
+        .spinner-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 14px;
+        }
+        .spinner {
+            width: 4.8px;
+            height: 4.8px;
+            animation: spinner-o824ag 0.6s infinite linear;
+            position: relative;
+            margin: 22px auto;
+        }
+        .spinner div {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: spinner-vse6n7 0.75s infinite ease;
+        }
+        .spinner div:nth-child(1) { --rotation: 90; }
+        .spinner div:nth-child(2) { --rotation: 180; }
+        .spinner div:nth-child(3) { --rotation: 270; }
+        .spinner div:nth-child(4) { --rotation: 360; }
+        @keyframes spinner-vse6n7 {
+            0%, 100% { transform: rotate(calc(var(--rotation) * 1deg)) translateY(0); }
+            50% { transform: rotate(calc(var(--rotation) * 1deg)) translateY(300%); }
+        }
+        @keyframes spinner-o824ag { to { transform: rotate(360deg); } }
+        
+        /* Стили для печати */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #print-report, #print-report * {
+                visibility: visible;
+            }
+            #print-report {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 20px;
+                font-family: Arial, sans-serif;
+            }
+            .print-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+            }
+            .print-table th, .print-table td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: left;
+            }
+            .print-table th {
+                background-color: #f2f2f2;
+            }
+            .print-header {
+                margin-bottom: 20px;
+                text-align: center;
+            }
+            .employee-input {
+                border: 1px solid #ccc;
+                padding: 5px;
+                margin-bottom: 15px;
+                width: 300px;
+            }
+        }
+        @media (max-width: 768px) {
+            .content { padding: 16px; }
+            .address-input { flex-direction: column; }
+            button { width: 100%; margin-bottom: 12px; }
+            #map { height: 220px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="background">
+        <div class='cube'></div>
+        <div class='cube'></div>
+        <div class='cube'></div>
+        <div class='cube'></div>
+        <div class='cube'></div>
+        <div class='cube'></div>
+        
+        <div class="content">
+            <h1>Маршрут с минимальным временем</h1>
+            
+            <div class="input-group">
+                <label for="startAddress">Стартовый адрес (откуда начинаем маршрут):</label>
+                <div class="address-input">
+                    <input type="text" id="startAddress" placeholder="Москва, Красная площадь">
+                    <button class="location-btn" onclick="getCurrentLocation()">Моё местоположение</button>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label for="addresses">Адреса для посещения (наиболее подозрительные):</label>
+                <textarea id="addresses" placeholder="Санкт-Петербург, Дворцовая площадь
+Казань, Кремль
+Владимир, Золотые ворота"></textarea>
+            </div>
+            
+            <button onclick="findOptimalRoute()">Найти лучший маршрут</button>
+            <div id="loading">Идёт расчёт...</div>
+            <div class="spinner-container" id="spinnerContainer" style="display: none;">
+                <div class="spinner">
+                  <div></div>   
+                  <div></div>    
+                  <div></div>    
+                  <div></div>    
+                </div>
+            </div>
+            <div class="route-info" id="routeInfo"></div>
+            <button id="printBtn" class="print-btn" style="display: none;" onclick="printReport()">Печать отчёта</button>
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <!-- Скрытый блок для печати -->
+    <div id="print-report" style="display: none;">
+        <div class="print-header">
+            <h2>Отчёт о маршруте</h2>
+            <p id="print-date"></p>
+            <div>
+                <label for="print-employee-input">ФИО Сотрудника:</label>
+                <input type="text" id="print-employee-input" class="employee-input">
+            </div>
+        </div>
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Адрес</th>
+                    <th>Примечание</th>
+                </tr>
+            </thead>
+            <tbody id="print-route">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let textarea = document.getElementById('addresses');
+            let addrs = localStorage.getItem('route_addresses');
+            if (addrs && textarea) textarea.value = addrs;
+        });
+    </script>
+
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=d6c63484-44a7-4d7c-9af8-7e7fe64e27f3&lang=ru_RU" type="text/javascript"></script>
+    
+    <script>
+        let map;
+        let currentMultiRoute = null;
+        let currentRoutePoints = [];
+        ymaps.ready(initMap);
+
+        function initMap() {
+            map = new ymaps.Map("map", {
+                center: [55.76, 37.64],
+                zoom: 5
+            });
+        }
+
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        const latitude = position.coords.latitude;
+                        const longitude = position.coords.longitude;
+                        
+                        try {
+                            const address = await reverseGeocode([latitude, longitude]);
+                            document.getElementById("startAddress").value = address;
+                            
+                            map.setCenter([latitude, longitude], 15);
+                            
+                            map.geoObjects.removeAll();
+                            const placemark = new ymaps.Placemark(
+                                [latitude, longitude],
+                                { iconContent: "Вы здесь" },
+                                { preset: "islands#blueDotIcon" }
+                            );
+                            map.geoObjects.add(placemark);
+                        } catch (error) {
+                            alert("Не удалось определить адрес для вашего местоположения");
+                            document.getElementById("startAddress").value = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+                        }
+                    },
+                    (error) => {
+                        alert("Ошибка при определении местоположения: " + error.message);
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            } else {
+                alert("Геолокация не поддерживается вашим браузером");
+            }
+        }
+
+        function reverseGeocode(coords) {
+            return new Promise((resolve, reject) => {
+                ymaps.geocode(coords, { results: 1 }).then(res => {
+                    const firstGeoObject = res.geoObjects.get(0);
+                    if (firstGeoObject) {
+                        resolve(firstGeoObject.getAddressLine());
+                    } else {
+                        reject("Адрес не найден");
+                    }
+                }).catch(err => reject(err));
+            });
+        }
+
+        async function findOptimalRoute() {
+            const startAddress = document.getElementById("startAddress").value.trim();
+            const addressesText = document.getElementById("addresses").value;
+            const addresses = addressesText.split("\n").filter(addr => addr.trim() !== "");
+
+            if (!startAddress) {
+                alert("Укажите стартовый адрес!");
+                return;
+            }
+
+            if (addresses.length < 1) {
+                alert("Нужно указать хотя бы один адрес для посещения!");
+                return;
+            }
+
+            document.getElementById("loading").style.display = "block";
+            document.getElementById("spinnerContainer").style.display = "flex";
+            document.getElementById("routeInfo").innerHTML = "";
+            document.getElementById("printBtn").style.display = "none";
+            if (currentMultiRoute) {
+                map.geoObjects.remove(currentMultiRoute);
+            }
+
+            let startPoint;
+            try {
+                const startCoords = await geocode(startAddress);
+                startPoint = { address: startAddress, coords: startCoords };
+            } catch (error) {
+                alert(`Стартовый адрес не найден: "${startAddress}"`);
+                document.getElementById("loading").style.display = "none";
+                document.getElementById("spinnerContainer").style.display = "none";
+                return;
+            }
+
+            const points = [];
+            for (const address of addresses) {
+                try {
+                    const coords = await geocode(address);
+                    points.push({ address, coords });
+                } catch (error) {
+                    alert(`Адрес не найден: "${address}"`);
+                    document.getElementById("loading").style.display = "none";
+                    document.getElementById("spinnerContainer").style.display = "none";
+                    return;
+                }
+            }
+
+            let bestRoute = null;
+            let bestMultiRoute = null;
+            let minDuration = Infinity;
+
+            if (points.length <= 5) {
+                const permutations = getPermutations(points);
+                
+                for (const perm of permutations) {
+                    const routeOrder = [startPoint, ...perm];
+                    const { multiRoute, duration } = await calculateRouteDuration(routeOrder);
+
+                    if (duration < minDuration) {
+                        minDuration = duration;
+                        bestRoute = routeOrder;
+                        bestMultiRoute = multiRoute;
+                    }
+                }
+            } else {
+                alert("Слишком много точек для посещения! Проверяем только исходный порядок (для >5 точек перебор долгий).");
+                bestRoute = [startPoint, ...points];
+                const result = await calculateRouteDuration(bestRoute);
+                bestMultiRoute = result.multiRoute;
+                minDuration = result.duration;
+            }
+
+            currentRoutePoints = bestRoute.slice(1); // Сохраняем только адреса для посещения (без стартового)
+            showRoute(bestRoute, bestMultiRoute);
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("spinnerContainer").style.display = "none";
+            document.getElementById("printBtn").style.display = "inline-block";
+        }
+
+        function getPermutations(arr) {
+            if (arr.length <= 1) return [arr];
+            const result = [];
+            for (let i = 0; i < arr.length; i++) {
+                const rest = [...arr.slice(0, i), ...arr.slice(i + 1)];
+                for (const perm of getPermutations(rest)) {
+                    result.push([arr[i], ...perm]);
+                }
+            }
+            return result;
+        }
+
+        async function calculateRouteDuration(points) {
+            const waypoints = points.map(point => point.coords);
+            
+            return new Promise((resolve) => {
+                const multiRoute = new ymaps.multiRouter.MultiRoute(
+                    {
+                        referencePoints: waypoints,
+                        params: { routingMode: "auto" }
+                    },
+                    { boundsAutoApply: true }
+                );
+
+                multiRoute.model.events.add("requestsuccess", function() {
+                    const routes = multiRoute.getRoutes();
+                    const durationText = routes.get(0).properties.get("duration").text;
+                    const durationValue = routes.get(0).properties.get("duration").value;
+                    
+                    resolve({
+                        multiRoute: multiRoute,
+                        duration: durationValue,
+                        durationText: durationText
+                    });
+                });
+
+                multiRoute.model.events.add("requestfail", () => resolve({
+                    multiRoute: multiRoute,
+                    duration: Infinity,
+                    durationText: "недоступно"
+                }));
+            });
+        }
+
+        function showRoute(points, multiRoute) {
+            map.geoObjects.removeAll();
+            currentMultiRoute = multiRoute;
+            map.geoObjects.add(multiRoute);
+
+            const routeText = points.map(p => p.address).join(" → ");
+            const durationText = multiRoute.getRoutes().get(0).properties.get("duration").text;
+
+            document.getElementById("routeInfo").innerHTML = `
+                <strong>Оптимальный маршрут:</strong> ${routeText}<br>
+                <strong>Общее время в пути:</strong> ${durationText}
+            `;
+        }
+
+        function geocode(address) {
+            return new Promise((resolve, reject) => {
+                ymaps.geocode(address, { results: 1 }).then(res => {
+                    const firstGeoObject = res.geoObjects.get(0);
+                    if (firstGeoObject) {
+                        resolve(firstGeoObject.geometry.getCoordinates());
+                    } else {
+                        reject("Адрес не найден");
+                    }
+                }).catch(err => reject(err));
+            });
+        }
+
+        function printReport() {
+            if (currentRoutePoints.length === 0) {
+                alert("Сначала постройте маршрут!");
+                return;
+            }
+
+            // Устанавливаем дату
+            const now = new Date();
+            const options = { day: 'numeric', month: 'long', year: 'numeric' };
+            document.getElementById("print-date").textContent = `Дата: ${now.toLocaleDateString('ru-RU', options)}`;
+            
+            // Заполняем таблицу маршрута (только адреса для посещения, без стартового)
+            const routeTable = document.getElementById("print-route");
+            routeTable.innerHTML = "";
+            
+            currentRoutePoints.forEach((point, index) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${point.address}</td>
+                    <td></td>
+                `;
+                routeTable.appendChild(row);
+            });
+
+            // Показываем блок для печати
+            const printReport = document.getElementById("print-report");
+            printReport.style.display = "block";
+            
+            // Печатаем
+            window.print();
+            
+            // Скрываем блок после печати
+            setTimeout(() => {
+                printReport.style.display = "none";
+            }, 500);
+        }
+    </script>
+</body>
+</html>

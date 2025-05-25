@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Light Detector</title>
+    <style>
+        /* ======= Reset ======= */
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background: #181c25;
+            color: #e9ecf3;
+        }
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        /* ======= Typography ======= */
+        h1 {
+            text-align: center;
+            font-size: 2.7rem;
+            margin-top: 40px;
+            margin-bottom: 14px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            color: #6eb7ff;
+            text-shadow: 0 2px 24px #06283d77;
+        }
+
+        p {
+            text-align: center;
+            font-size: 1.1rem;
+            margin-bottom: 28px;
+            color: #b3bbcf;
+        }
+
+        /* ======= Form ======= */
+        form#upload-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+            margin-bottom: 36px;
+        }
+
+        input[type="file"] {
+            text-align: center;
+            font-size: 1rem;
+            color: #d6e3f3;
+            background: #23273a;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            width: 30%;
+        }
+        input[type="file"]::file-selector-button {
+            background: #26324c;
+            color: #e9ecf3;
+            border: none;
+            padding: 7px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        input[type="file"]::file-selector-button:hover {
+            background: #4469b1;
+        }
+
+        button[type="submit"], #build-route-btn {
+            background: linear-gradient(90deg,#2274a5 0%,#4364f7 100%);
+            color: #fff;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 7px;
+            font-size: 1.09rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: background 0.18s, box-shadow 0.18s;
+            margin-top: 8px;
+            box-shadow: 0 2px 12px #06283d33;
+        }
+        button[type="submit"]:hover, #build-route-btn:hover {
+            background: linear-gradient(90deg,#21415b 0%,#274590 100%);
+            box-shadow: 0 2px 18px #000a1a66;
+        }
+
+        hr {
+            margin: 40px auto 26px;
+            border: none;
+            border-top: 1.5px solid #253045;
+            width: 90%;
+        }
+
+        /* ======= Panel ======= */
+        #progress {
+            margin: 0 auto;
+            max-width: 1180px;
+            background: #23273a;
+            border-radius: 18px;
+            box-shadow: 0 6px 34px 0 #05122060;
+            padding: 32px 40px 36px 40px;
+            border: 1.5px solid #2a3450;
+        }
+
+        #current {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #6eb7ff;
+            margin-bottom: 16px;
+        }
+
+        /* ======= Table ======= */
+        table#results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0 24px 0;
+            background: #202334;
+            border-radius: 13px;
+            overflow: hidden;
+            box-shadow: 0 1px 7px 0 #1d24422a;
+        }
+        table#results-table th, table#results-table td {
+            padding: 14px 9px;
+            text-align: left;
+        }
+        table#results-table th {
+            background: #1b2536;
+            color: #6eb7ff;
+            font-weight: 700;
+            font-size: 1.02rem;
+            border-bottom: 2px solid #304674;
+        }
+        table#results-table tr {
+            transition: background 0.13s;
+        }
+        table#results-table tr:hover {
+            background: #273554;
+        }
+        table#results-table td {
+            font-size: 1rem;
+            color: #e9ecf3;
+            border-bottom: 1px solid #222b3c;
+        }
+        table#results-table tr:nth-child(even) td {
+            background: #232a41;
+        }
+
+        /* ======= Download Link ======= */
+        #download-link {
+            display: inline-block;
+            background: #161a2a;
+            border: 2px solid #4364f7;
+            color: #6eb7ff;
+            border-radius: 8px;
+            padding: 12px 28px;
+            font-size: 1.11rem;
+            text-decoration: none;
+            font-weight: 600;
+            letter-spacing: 0.6px;
+            margin-top: 16px;
+            margin-bottom: 4px;
+            transition: all 0.21s;
+        }
+        #download-link:hover {
+            background: #6eb7ff;
+            color: #161a2a;
+            box-shadow: 0 2px 12px #4469b199;
+        }
+
+        /* ======= Region Select ======= */
+        #region-form {
+            margin-top: 30px;
+            display: flex;
+            align-items: center;
+            gap: 22px;
+        }
+        #region-select {
+            font-size: 1.09rem;
+            padding: 9px 20px;
+            border-radius: 8px;
+            border: 1.5px solid #304674;
+            background: #19202f;
+            color: #b3bbcf;
+            font-weight: 600;
+            transition: border 0.15s, background 0.15s;
+        }
+        #region-select:focus {
+            border: 1.5px solid #6eb7ff;
+            background: #242b3c;
+        }
+        label[for="region-select"] {
+            font-size: 1.09rem;
+            color: #6eb7ff;
+            margin-right: 8px;
+        }
+
+        /* ======= Responsive ======= */
+        @media (max-width: 900px) {
+            #progress {
+                padding: 12px 3vw 18px 3vw;
+            }
+            h1 {
+                font-size: 1.7rem;
+                margin-top: 26px;
+            }
+            table#results-table th, table#results-table td {
+                padding: 8px 2px;
+                font-size: 0.97rem;
+            }
+            #region-form {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+        }
+
+        /* ======= Scrollbar Styling ======= */
+        ::-webkit-scrollbar {
+            width: 8px;
+            background: #232a41;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d3655;
+            border-radius: 10px;
+        }
+        ::selection {
+            background: #2a3450;
+            color: #a4d8ff;
+        }
+    </style>
+</head>
+<body>
+    <h1>Light Detector</h1>
+    <p>Загрузите файл с данными потребления (JSON):</p>
+    <form id="upload-form" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".json" required>
+        <button type="submit">Анализировать</button>
+    </form>
+    <hr>
+    <div id="progress" style="display:none;">
+        <div id="current"></div>
+        <table border="1" id="results-table">
+            <thead>
+                <tr>
+                    <th>accountId</th>
+                    <th>Адрес</th>
+                    <th>Риск (%)</th>
+                    <th>Osint checker</th>
+                    <th>Причины</th>
+                </tr>
+            </thead>
+            <tbody id="results-body"></tbody>
+        </table>
+        <a href="/download" target="_blank" id="download-link" style="display:none;">Скачать полный результат (Excel-таблица)</a>
+        <br><br>
+        <div id="region-form" style="display:none;">
+            <label for="region-select"><b>Выберите регион:</b></label>
+            <select id="region-select"></select>
+            <button id="build-route-btn" style="margin-left:15px;">Построить маршрут</button>
+        </div>
+    </div>
+    <script>
+    let allResults = [];
+    let lastFiltered = [];
+
+    function renderTable(region=null) {
+        const tbody = document.getElementById('results-body');
+        tbody.innerHTML = '';
+
+        let filtered = allResults;
+        if (region) {
+            filtered = filtered.filter(r => {
+                let parts = r.address.split(',');
+                return parts.length > 2 && parts[1].trim() === region;
+            });
+        }
+        // Сортировка: бизнес-флаг=1 сначала по убыванию риска, потом бизнес-флаг=0 по убыванию риска
+        filtered.sort((a, b) => {
+            if (b.osint_flag !== a.osint_flag) {
+                return b.osint_flag - a.osint_flag;
+            }
+            return b.risk_probability - a.risk_probability;
+        });
+        lastFiltered = filtered; // сохраняем отфильтрованные данные
+
+        for (let res of filtered) {
+            let row = `<tr>
+                <td>${res.accountId}</td>
+                <td>${res.address}</td>
+                <td>${(res.risk_probability * 100).toFixed(2)}</td>
+                <td>${res.osint_flag}</td>
+                <td>${res.reasons}</td>
+            </tr>`;
+            tbody.insertAdjacentHTML('beforeend', row);
+        }
+    }
+
+    document.getElementById('upload-form').onsubmit = async function(e) {
+        e.preventDefault();
+        let form = e.target;
+        let fileInput = form.querySelector('input[type="file"]');
+        let data = new FormData();
+        data.append('file', fileInput.files[0]);
+        document.getElementById('progress').style.display = '';
+        document.getElementById('results-body').innerHTML = '';
+        document.getElementById('download-link').style.display = 'none';
+        document.getElementById('region-form').style.display = 'none';
+        document.getElementById('current').innerHTML = "Обработка...";
+
+        allResults = [];
+        let addresses = [];
+
+        const response = await fetch('/analyze', {
+            method: 'POST',
+            body: data
+        });
+
+        if (!response.body) {
+            alert('Ошибка потока!');
+            return;
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while(true) {
+            const {done, value} = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, {stream: true});
+            let lines = buffer.split('\n');
+            buffer = lines.pop();
+            for (let line of lines) {
+                if (!line.trim()) continue;
+                let res = JSON.parse(line);
+                allResults.push(res);
+                addresses.push(res.address);
+            }
+        }
+
+        // Уникальные регионы из адресов
+        let regions = new Set();
+        addresses.forEach(address => {
+            let parts = address.split(',');
+            if (parts.length > 2) {
+                let region = parts[1].trim();
+                if (region) regions.add(region);
+            }
+        });
+        regions = Array.from(regions).sort();
+
+        // Заполнение <select>
+        let regionSelect = document.getElementById('region-select');
+        regionSelect.innerHTML = '';
+        regions.forEach(region => {
+            let opt = document.createElement('option');
+            opt.value = region;
+            opt.innerText = region;
+            regionSelect.appendChild(opt);
+        });
+
+        if (regions.length > 0) {
+            document.getElementById('region-form').style.display = '';
+            regionSelect.onchange = function() {
+                renderTable(this.value);
+            };
+            renderTable(regions[0]);
+            regionSelect.value = regions[0];
+        } else {
+            renderTable();
+        }
+
+        document.getElementById('download-link').style.display = '';
+        document.getElementById('current').innerHTML = "Готово!";
+    };
+
+    // КНОПКА ПОСТРОИТЬ МАРШРУТ
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('build-route-btn').onclick = function() {
+            // top-5 из lastFiltered
+            let top5 = lastFiltered.slice(0, 5).map(r => r.address).join('\n');
+            localStorage.setItem('route_addresses', top5);
+            window.location.href = '/search.html';
+        };
+    });
+    </script>
+</body>
+</html>

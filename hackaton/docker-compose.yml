@@ -1,0 +1,27 @@
+services:
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    expose:
+      - "5000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: gunicorn -b 0.0.0.0:5000 app:app --timeout 60000
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: nginx.Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - web
+    deploy:
+      resources:
+        limits:
+          memory: 1G
